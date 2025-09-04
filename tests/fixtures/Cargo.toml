@@ -1,0 +1,13 @@
+[package]
+name = "test-rust-project"
+version = "0.2.1"
+edition = "2021"
+description = "A test Rust project for fixture testing"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.0", features = ["derive"] }
+
+[dev-dependencies]
+criterion = "0.5"

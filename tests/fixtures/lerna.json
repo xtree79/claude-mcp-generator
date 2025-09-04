@@ -1,0 +1,13 @@
+{
+  "version": "1.4.0",
+  "npmClient": "npm",
+  "command": {
+    "publish": {
+      "conventionalCommits": true
+    }
+  },
+  "packages": [
+    "packages/*",
+    "apps/*"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "name": "claude-mcp-generator",
+  "version": "1.0.0",
+  "description": "A CLI tool to generate Claude Code MCP configurations for different project types",
+  "main": "src/index.js",
+  "bin": {
+    "claude-gen": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "dev": "nodemon src/cli.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:setup": "node scripts/test-setup.js",
+    "pretest": "npm run test:setup",
+    "lint": "eslint src tests",
+    "lint:fix": "eslint src tests --fix",
+    "ci": "npm run lint && npm run test:coverage"
+  },
+  "keywords": ["claude", "mcp", "generator", "cli", "automation", "model-context-protocol", "claude-code", "ai-tools"],
+  "author": "xtree79",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xtree79/claude-mcp-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xtree79/claude-mcp-generator/issues"
+  },
+  "homepage": "https://github.com/xtree79/claude-mcp-generator#readme",
+  "dependencies": {
+    "inquirer": "^8.2.6",
+    "chalk": "^4.1.2",
+    "fs-extra": "^11.1.1",
+    "commander": "^11.0.0",
+    "glob": "^10.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "eslint": "^8.54.0",
+    "@jest/globals": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/cli.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  }
+}

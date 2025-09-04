@@ -1,0 +1,86 @@
+{
+  "claude_desktop_integration": {
+    "enabled": true
+  },
+  "mcp": {
+    "mcpServers": {
+      "test-project-server": {
+        "command": "node",
+        "args": ["server.js"],
+        "env": {
+          "NODE_ENV": "development"
+        }
+      }
+    }
+  },
+  "workspaceFiles": [
+    "package.json",
+    "src/**/*.js",
+    "src/**/*.ts",
+    "tests/**/*.js",
+    "README.md",
+    ".gitignore"
+  ],
+  "directoryPermissions": {
+    "allowedReadPaths": [
+      "D:\\claude_mcp_generator",
+      "D:\\claude_mcp_generator\\src"
+    ],
+    "allowedWritePaths": [
+      "D:\\claude_mcp_generator",
+      "D:\\claude_mcp_generator\\src"
+    ]
+  },
+  "tools": {
+    "bash": {
+      "enabled": true
+    },
+    "powershell": {
+      "enabled": false
+    }
+  },
+  "hooks": {
+    "on_project_open": "echo 'Welcome to the project!'",
+    "after_file_edit": "npm test"
+  },
+  "workspace": {
+    "type": "Lerna Monorepo",
+    "structure": "workspace",
+    "projects": [
+      {
+        "name": "frontend",
+        "path": "packages/frontend",
+        "type": "react",
+        "confidence": 95
+      },
+      {
+        "name": "backend", 
+        "path": "packages/backend",
+        "type": "nodejs",
+        "confidence": 90
+      }
+    ]
+  },
+  "repositories": {
+    "frontend": [
+      {
+        "name": "origin",
+        "type": "github",
+        "url": "https://github.com/user/frontend.git",
+        "webUrl": "https://github.com/user/frontend",
+        "visibility": "private",
+        "action": "add"
+      }
+    ],
+    "backend": [
+      {
+        "name": "origin", 
+        "type": "gitea",
+        "url": "https://git.company.com/team/backend.git",
+        "webUrl": "https://git.company.com/team/backend",
+        "visibility": "internal",
+        "action": "add"
+      }
+    ]
+  }
+}
