@@ -216,59 +216,59 @@ async function initCommand(options) {
   } else {
     // Interactive configuration
     answers = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'projectName',
-      message: 'Project name:',
-      default: path.basename(targetDir)
-    },
-    {
-      type: 'list',
-      name: 'workspaceFilesOption',
-      message: 'How would you like to configure workspace files?',
-      choices: [
-        { 
-          name: `Use recommended patterns for this project type (${config.workspaceFiles.length} patterns)`, 
-          value: 'recommended' 
-        },
-        { 
-          name: `Use all scanned files from this directory (${workspaceAnalysis.totalFiles} files)`, 
-          value: 'scanned' 
-        },
-        { 
-          name: 'Customize patterns manually', 
-          value: 'custom' 
-        },
-        { 
-          name: 'Skip workspace files (Claude won\'t access project files directly)', 
-          value: 'none' 
-        }
-      ],
-      default: isSmallProject && hasSimpleStructure ? 'scanned' : 'recommended'
-    },
-    {
-      type: 'confirm',
-      name: 'includePermissions',
-      message: 'Configure directory permissions?',
-      default: true
-    },
-    {
-      type: 'confirm',
-      name: 'generateMcpServer',
-      message: 'Generate MCP server file?',
-      default: true
-    },
-    {
-      type: 'checkbox',
-      name: 'additionalCommands',
-      message: 'Select additional commands to include:',
-      choices: Object.keys(config.commands).map(cmd => ({
-        name: `${cmd}: ${config.commands[cmd]}`,
-        value: cmd,
-        checked: true
-      }))
-    }
-  ]);
+      {
+        type: 'input',
+        name: 'projectName',
+        message: 'Project name:',
+        default: path.basename(targetDir)
+      },
+      {
+        type: 'list',
+        name: 'workspaceFilesOption',
+        message: 'How would you like to configure workspace files?',
+        choices: [
+          { 
+            name: `Use recommended patterns for this project type (${config.workspaceFiles.length} patterns)`, 
+            value: 'recommended' 
+          },
+          { 
+            name: `Use all scanned files from this directory (${workspaceAnalysis.totalFiles} files)`, 
+            value: 'scanned' 
+          },
+          { 
+            name: 'Customize patterns manually', 
+            value: 'custom' 
+          },
+          { 
+            name: 'Skip workspace files (Claude won\'t access project files directly)', 
+            value: 'none' 
+          }
+        ],
+        default: isSmallProject && hasSimpleStructure ? 'scanned' : 'recommended'
+      },
+      {
+        type: 'confirm',
+        name: 'includePermissions',
+        message: 'Configure directory permissions?',
+        default: true
+      },
+      {
+        type: 'confirm',
+        name: 'generateMcpServer',
+        message: 'Generate MCP server file?',
+        default: true
+      },
+      {
+        type: 'checkbox',
+        name: 'additionalCommands',
+        message: 'Select additional commands to include:',
+        choices: Object.keys(config.commands).map(cmd => ({
+          name: `${cmd}: ${config.commands[cmd]}`,
+          value: cmd,
+          checked: true
+        }))
+      }
+    ]);
 
     // Ask about hooks configuration
     hooksAnswers = {};
@@ -280,61 +280,61 @@ async function initCommand(options) {
     }]);
 
     if (shouldConfigureHooks.configureHooks) {
-    const hooksManager = new HooksManager();
-    const hookChoices = hooksManager.getHookChoices(projectType);
+      const hooksManager = new HooksManager();
+      const hookChoices = hooksManager.getHookChoices(projectType);
     
-    hooksAnswers = await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'selectedHooks',
-        message: 'Select hooks to enable:',
-        choices: hookChoices,
-        pageSize: 15
-      },
-      {
-        type: 'confirm',
-        name: 'addCustomHook',
-        message: 'Add a custom hook?',
-        default: false,
-        when: (answers) => answers.selectedHooks.length > 0
-      }
-    ]);
-
-    // Handle custom hooks
-    if (hooksAnswers.addCustomHook) {
-      const customHook = await inquirer.prompt([
+      hooksAnswers = await inquirer.prompt([
         {
-          type: 'input',
-          name: 'name',
-          message: 'Custom hook name:',
-          validate: (input) => input.length > 0 || 'Hook name is required'
+          type: 'checkbox',
+          name: 'selectedHooks',
+          message: 'Select hooks to enable:',
+          choices: hookChoices,
+          pageSize: 15
         },
         {
-          type: 'list',
-          name: 'event',
-          message: 'When should this hook run?',
-          choices: [
-            { name: 'When project opens', value: 'on_project_open' },
-            { name: 'After file edit', value: 'after_file_edit' },
-            { name: 'When project closes', value: 'on_project_close' },
-            { name: 'Before tool execution', value: 'before_tool_execution' }
-          ]
-        },
-        {
-          type: 'input',
-          name: 'command',
-          message: 'Command to execute:',
-          validate: (input) => input.length > 0 || 'Command is required'
-        },
-        {
-          type: 'input',
-          name: 'description',
-          message: 'Description (optional):'
+          type: 'confirm',
+          name: 'addCustomHook',
+          message: 'Add a custom hook?',
+          default: false,
+          when: (answers) => answers.selectedHooks.length > 0
         }
       ]);
 
-      hooksAnswers.customHooks = [customHook];
-    }
+      // Handle custom hooks
+      if (hooksAnswers.addCustomHook) {
+        const customHook = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'name',
+            message: 'Custom hook name:',
+            validate: (input) => input.length > 0 || 'Hook name is required'
+          },
+          {
+            type: 'list',
+            name: 'event',
+            message: 'When should this hook run?',
+            choices: [
+              { name: 'When project opens', value: 'on_project_open' },
+              { name: 'After file edit', value: 'after_file_edit' },
+              { name: 'When project closes', value: 'on_project_close' },
+              { name: 'Before tool execution', value: 'before_tool_execution' }
+            ]
+          },
+          {
+            type: 'input',
+            name: 'command',
+            message: 'Command to execute:',
+            validate: (input) => input.length > 0 || 'Command is required'
+          },
+          {
+            type: 'input',
+            name: 'description',
+            message: 'Description (optional):'
+          }
+        ]);
+
+        hooksAnswers.customHooks = [customHook];
+      }
     }
   }
 
