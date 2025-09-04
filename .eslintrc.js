@@ -28,5 +28,11 @@ module.exports = {
         'no-console': 'off',
       },
     },
+    {
+      files: ['src/cli.js'],
+      rules: {
+        'no-console': 'off', // Allow console statements in CLI tool
+      },
+    },
   ],
 };
