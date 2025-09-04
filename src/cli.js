@@ -92,40 +92,50 @@ async function initCommand(options) {
       });
       
       if (!projectType) {
-        const answer = await inquirer.prompt([{
-          type: 'list',
-          name: 'selectedType',
-          message: 'Select project type:',
-          choices: [
-            ...detectedTypes.map(type => ({
-              name: `${projectTypes[type.type]?.name || type.type} (detected)`,
-              value: type.type
-            })),
-            new inquirer.Separator(),
-            ...Object.keys(projectTypes).filter(type => 
-              !detectedTypes.some(d => d.type === type)
-            ).map(type => ({
-              name: projectTypes[type].name,
-              value: type
-            }))
-          ]
-        }]);
-        projectType = answer.selectedType;
+        if (options.dryRun) {
+          // Use first detected type for dry-run
+          projectType = detectedTypes[0].type;
+        } else {
+          const answer = await inquirer.prompt([{
+            type: 'list',
+            name: 'selectedType',
+            message: 'Select project type:',
+            choices: [
+              ...detectedTypes.map(type => ({
+                name: `${projectTypes[type.type]?.name || type.type} (detected)`,
+                value: type.type
+              })),
+              new inquirer.Separator(),
+              ...Object.keys(projectTypes).filter(type => 
+                !detectedTypes.some(d => d.type === type)
+              ).map(type => ({
+                name: projectTypes[type].name,
+                value: type
+              }))
+            ]
+          }]);
+          projectType = answer.selectedType;
+        }
       }
     } else {
       console.log(chalk.yellow('⚠️  Could not auto-detect project type'));
       
       if (!projectType) {
-        const answer = await inquirer.prompt([{
-          type: 'list',
-          name: 'selectedType',
-          message: 'Select project type:',
-          choices: Object.keys(projectTypes).map(type => ({
-            name: projectTypes[type].name,
-            value: type
-          }))
-        }]);
-        projectType = answer.selectedType;
+        if (options.dryRun) {
+          // Default to nodejs for dry-run when detection fails
+          projectType = 'nodejs';
+        } else {
+          const answer = await inquirer.prompt([{
+            type: 'list',
+            name: 'selectedType',
+            message: 'Select project type:',
+            choices: Object.keys(projectTypes).map(type => ({
+              name: projectTypes[type].name,
+              value: type
+            }))
+          }]);
+          projectType = answer.selectedType;
+        }
       }
     }
   }
@@ -190,8 +200,22 @@ async function initCommand(options) {
   
   console.log();
 
-  // Interactive configuration
-  const answers = await inquirer.prompt([
+  // Skip interactive prompts in dry-run mode
+  let answers, shouldConfigureHooks, hooksAnswers;
+  if (options.dryRun) {
+    // Use defaults for dry-run mode
+    answers = {
+      projectName: path.basename(targetDir),
+      workspaceFilesOption: 'recommended',
+      includePermissions: true,
+      generateMcpServer: true,
+      additionalCommands: Object.keys(config.commands)
+    };
+    shouldConfigureHooks = { configureHooks: false };
+    hooksAnswers = { selectedHooks: [], customHooks: [] };
+  } else {
+    // Interactive configuration
+    answers = await inquirer.prompt([
     {
       type: 'input',
       name: 'projectName',
@@ -246,16 +270,16 @@ async function initCommand(options) {
     }
   ]);
 
-  // Ask about hooks configuration
-  let hooksAnswers = {};
-  const shouldConfigureHooks = await inquirer.prompt([{
-    type: 'confirm',
-    name: 'configureHooks',
-    message: 'Configure Claude Code hooks (startup actions, file events)?',
-    default: true
-  }]);
+    // Ask about hooks configuration
+    hooksAnswers = {};
+    shouldConfigureHooks = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'configureHooks',
+      message: 'Configure Claude Code hooks (startup actions, file events)?',
+      default: true
+    }]);
 
-  if (shouldConfigureHooks.configureHooks) {
+    if (shouldConfigureHooks.configureHooks) {
     const hooksManager = new HooksManager();
     const hookChoices = hooksManager.getHookChoices(projectType);
     
@@ -310,6 +334,7 @@ async function initCommand(options) {
       ]);
 
       hooksAnswers.customHooks = [customHook];
+    }
     }
   }
 
@@ -530,6 +555,11 @@ async function initCommand(options) {
     console.log('3. Open your project in Claude Code');
     console.log('4. The MCP server will be automatically configured');
   }
+  
+  // Explicitly exit with success code for integration tests
+  if (require.main === module) {
+    process.exit(0);
+  }
 }
 
 async function scanCommand(options) {
@@ -538,6 +568,12 @@ async function scanCommand(options) {
   console.log(chalk.blue('🔍 Scanning workspace...'));
   console.log(chalk.gray(`Directory: ${targetDir}`));
   console.log();
+
+  // Check if directory exists
+  if (!await fs.pathExists(targetDir)) {
+    console.error(chalk.red(`Error: Directory does not exist: ${targetDir}`));
+    process.exit(1);
+  }
 
   const scanner = new WorkspaceScanner();
   const analysis = await scanner.analyzeWorkspace(targetDir);
@@ -566,6 +602,11 @@ async function scanCommand(options) {
   analysis.recommendedPatterns.forEach(pattern => {
     console.log(`  ${chalk.gray(pattern)}`);
   });
+  
+  // Explicitly exit with success code for integration tests
+  if (require.main === module) {
+    process.exit(0);
+  }
 }
 
 async function validateCommand(options) {
@@ -633,6 +674,11 @@ async function validateCommand(options) {
 
   } catch (error) {
     console.log(chalk.red('❌ Error reading settings file:'), error.message);
+  }
+  
+  // Explicitly exit with success code for integration tests
+  if (require.main === module) {
+    process.exit(0);
   }
 }
 
