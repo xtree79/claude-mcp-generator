@@ -1,11 +1,15 @@
 # Claude MCP Generator
 
+[![npm version](https://badge.fury.io/js/claude-mcp-generator.svg)](https://badge.fury.io/js/claude-mcp-generator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/xtree79/claude-mcp-generator.svg)](https://github.com/xtree79/claude-mcp-generator/releases)
+
 A CLI tool to generate Claude Code MCP (Model Context Protocol) configurations for different project types. This tool automates the setup of `.claude/settings.local.json` files and MCP server implementations for your projects.
 
 ## Features
 
 - 🚀 **Auto-detection** of project types (Node.js, React, Next.js, Python, .NET, Rust, Go)
-- 🏗️ **Workspace & monorepo detection** - Lerna, Nx, pnpm, Yarn, Rush, and more
+- 🏗️ **Workspace & monorepo detection** - Lerna, Nx, pnpm, Yarn, Rush, VS Code workspaces, and more
 - 🔄 **Multi-repository management** - Different Git targets per project (GitHub, GitLab, Gitea, Azure DevOps)
 - 🔒 **Repository visibility tracking** - Private, public, and internal repository management
 - 📝 **Automatic generation** of Claude settings with workspace files and permissions
@@ -15,6 +19,21 @@ A CLI tool to generate Claude Code MCP (Model Context Protocol) configurations f
 - 🛡️ **Security validation** of directory permissions
 - 📊 **Workspace analysis** and file scanning
 - 🎯 **Interactive CLI** with customization options
+
+## Quick Start
+
+```bash
+# Install globally
+npm install -g claude-mcp-generator
+
+# Navigate to your project
+cd /path/to/your/project
+
+# Generate Claude configuration
+claude-gen init --auto-detect
+
+# That's it! Your project is now configured for Claude Code
+```
 
 ## Installation
 
@@ -202,6 +221,7 @@ The generator automatically detects and configures complex workspace structures 
 | **pnpm** | `pnpm-workspace.yaml`, `pnpm-lock.yaml` | Fast, disk space efficient package manager |
 | **Yarn** | `yarn.lock` + `workspaces` in `package.json` | Yarn workspaces |
 | **Rush** | `rush.json` | Microsoft's scalable monorepo manager |
+| **VS Code** | `*.code-workspace` | VS Code workspace with external folders |
 | **Cargo** | `Cargo.toml` with `[workspace]` | Rust workspace |
 | **.NET** | `*.sln` | Visual Studio solution files |
 | **Maven** | `pom.xml` with `<modules>` | Java multi-module projects |
@@ -230,6 +250,28 @@ claude-gen init --auto-detect --directory d:\my-workspace
   mobile (react) - 89 files - 87% confidence
   shared-lib (typescript) - 23 files - 85% confidence
 ```
+
+### VS Code Workspace Support
+
+The generator has special support for VS Code workspace files (`.code-workspace`) that can reference folders outside the main directory:
+
+```json
+// dbhm-workspace.code-workspace
+{
+  "folders": [
+    { "path": "." },
+    { "path": "../ML-DBHM-Intelligence", "name": "ML Intelligence" }
+  ]
+}
+```
+
+When detected, the generator:
+- ✅ **Parses workspace file** to find all folder references
+- ✅ **Includes external folders** in Claude configuration  
+- ✅ **Handles both relative and absolute paths**
+- ✅ **Maintains folder names** from workspace configuration
+
+This ensures Claude can access all projects referenced in your VS Code workspace, even if they're located outside the main project directory.
 
 ## Repository Management Per Project
 
