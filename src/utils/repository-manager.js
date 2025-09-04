@@ -367,7 +367,7 @@ class RepositoryManager {
     return baseChoices;
   }
 
-  getDefaultVisibility(type) {
+  getDefaultVisibility(_type) {
     // Most work/corporate repos default to private
     return 'private';
   }
@@ -429,7 +429,7 @@ class RepositoryManager {
     return url;
   }
 
-  generateRepositoryCommands(repositories, projectPath) {
+  generateRepositoryCommands(repositories, _projectPath) {
     const commands = {
       setup: [],
       push: [],

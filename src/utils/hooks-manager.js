@@ -1,4 +1,4 @@
-const path = require('path');
+// const path = require('path'); // Currently unused
 
 class HooksManager {
   constructor() {
@@ -179,7 +179,7 @@ class HooksManager {
     }
     
     // Check project-specific hooks
-    for (const [projectType, hooks] of Object.entries(this.projectTypeHooks)) {
+    for (const hooks of Object.values(this.projectTypeHooks)) {
       if (hooks[hookId]) {
         return { ...hooks[hookId], id: hookId, category: 'projectSpecific' };
       }

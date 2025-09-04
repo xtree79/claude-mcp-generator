@@ -16,7 +16,7 @@ class WorkspaceDetector {
       
       // Nx (Extensible dev tools)
       'nx.json': 'Nx Workspace',
-      'workspace.json': 'Nx Workspace', // Nx also uses workspace.json
+      // Note: workspace.json is also used by Nx but conflicts with generic workspace
       
       // Rush (Microsoft's monorepo tool)
       'rush.json': 'Rush Monorepo',
@@ -162,7 +162,7 @@ class WorkspaceDetector {
     return { found: false };
   }
 
-  async readWorkspaceConfig(filePath, type) {
+  async readWorkspaceConfig(filePath, _type) {
     try {
       const ext = path.extname(filePath).toLowerCase();
       
@@ -289,15 +289,16 @@ class WorkspaceDetector {
       case 'nextjs':
       case 'vue':
       case 'nuxtjs':
-      case 'svelte':
+      case 'svelte': {
         const packageJson = path.join(dirPath, 'package.json');
         if (await fs.pathExists(packageJson)) {
           const pkg = await fs.readJSON(packageJson);
           return pkg.name;
         }
         break;
+      }
           
-      case 'rust':
+      case 'rust': {
         const cargoToml = path.join(dirPath, 'Cargo.toml');
         if (await fs.pathExists(cargoToml)) {
           const content = await fs.readFile(cargoToml, 'utf8');
@@ -305,8 +306,9 @@ class WorkspaceDetector {
           if (nameMatch) return nameMatch[1];
         }
         break;
+      }
           
-      case 'python':
+      case 'python': {
         const pyprojectToml = path.join(dirPath, 'pyproject.toml');
         if (await fs.pathExists(pyprojectToml)) {
           const content = await fs.readFile(pyprojectToml, 'utf8');
@@ -314,8 +316,9 @@ class WorkspaceDetector {
           if (nameMatch) return nameMatch[1];
         }
         break;
+      }
           
-      case 'go':
+      case 'go': {
         const goMod = path.join(dirPath, 'go.mod');
         if (await fs.pathExists(goMod)) {
           const content = await fs.readFile(goMod, 'utf8');
@@ -326,6 +329,7 @@ class WorkspaceDetector {
           }
         }
         break;
+      }
       }
     } catch (error) {
       // Ignore errors, just return null

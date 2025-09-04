@@ -28,7 +28,7 @@ class ClaudeSettingsGenerator {
 
   async generateSettings(projectConfig, targetDir = process.cwd(), options = {}) {
     const {
-      projectName = path.basename(targetDir),
+      projectName = path.basename(targetDir), // eslint-disable-line no-unused-vars
       includeWorkspaceFiles = true,
       workspaceFiles = null,
       includePermissions = true,

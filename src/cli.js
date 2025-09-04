@@ -432,8 +432,8 @@ async function initCommand(options) {
           });
           
           const visibilityIcon = repoDetails.visibility === 'private' ? '🔒' : 
-                                  repoDetails.visibility === 'public' ? '🌍' : 
-                                  repoDetails.visibility === 'internal' ? '🏢' : '❓';
+            repoDetails.visibility === 'public' ? '🌍' : 
+              repoDetails.visibility === 'internal' ? '🏢' : '❓';
           
           console.log(chalk.green(`  ✅ Added ${repoDetails.name}: ${repoUrl}`));
           console.log(chalk.gray(`     ${visibilityIcon} ${repoDetails.visibility.charAt(0).toUpperCase() + repoDetails.visibility.slice(1)} repository`));
