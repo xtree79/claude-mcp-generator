@@ -256,11 +256,11 @@ claude-gen init --auto-detect --directory d:\my-workspace
 The generator has special support for VS Code workspace files (`.code-workspace`) that can reference folders outside the main directory:
 
 ```json
-// dbhm-workspace.code-workspace
+// my-workspace.code-workspace
 {
   "folders": [
     { "path": "." },
-    { "path": "../ML-DBHM-Intelligence", "name": "ML Intelligence" }
+    { "path": "../external-project", "name": "External Project" }
   ]
 }
 ```
