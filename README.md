@@ -16,6 +16,9 @@ A CLI tool to generate Claude Code MCP (Model Context Protocol) configurations f
 - 🔧 **MCP server generation** in multiple languages
 - 🔗 **Claude Code hooks configuration** - Startup actions, file events, and custom behaviors
 - 📁 **Smart workspace file detection** - Scans actual files vs. templates
+- 🎯 **Priority files configuration** - Files Claude reads first for context
+- 🏗️ **Enhanced VS Code workspace support** - External folder detection and configuration
+- 🐳 **Docker project type support** - Container-based project configurations
 - 🛡️ **Security validation** of directory permissions
 - 📊 **Workspace analysis** and file scanning
 - 🎯 **Interactive CLI** with customization options
@@ -253,25 +256,69 @@ claude-gen init --auto-detect --directory d:\my-workspace
 
 ### VS Code Workspace Support
 
-The generator has special support for VS Code workspace files (`.code-workspace`) that can reference folders outside the main directory:
+The generator has **enhanced support** for VS Code workspace files (`.code-workspace`) with external folder references, perfect for multi-project setups where related projects are in separate directories:
 
 ```json
 // my-workspace.code-workspace
 {
   "folders": [
-    { "path": "." },
-    { "path": "../external-project", "name": "External Project" }
+    { "path": ".", "name": "Main Project" },
+    { "path": "../api-server", "name": "API Server" },
+    { "path": "../mobile-app", "name": "Mobile App" }
   ]
 }
 ```
 
-When detected, the generator:
-- ✅ **Parses workspace file** to find all folder references
-- ✅ **Includes external folders** in Claude configuration  
-- ✅ **Handles both relative and absolute paths**
-- ✅ **Maintains folder names** from workspace configuration
+#### Advanced Features
 
-This ensures Claude can access all projects referenced in your VS Code workspace, even if they're located outside the main project directory.
+When VS Code workspace files are detected, the generator:
+- ✅ **Parses workspace file** to find all folder references (any number of projects)
+- ✅ **Detects external projects** with proper project type identification  
+- ✅ **Generates consistent paths** using relative references (`../project/file`)
+- ✅ **Creates directory permissions** for all external project locations
+- ✅ **Includes workspace file patterns** that span all projects
+- ✅ **Adds priority files** from external projects for better Claude context
+- ✅ **Handles repository configuration** for each project independently
+- ✅ **Supports mixed project types** (Python + Docker + Node.js, etc.)
+
+#### Example: Multi-Project Configuration
+
+For a workspace with a main project and external API server:
+
+```json
+{
+  "workspaceFiles": [
+    "*.py", "**/*.py", "requirements.txt",           // Main project
+    "../api-server/docker-compose.yml",             // External project  
+    "../api-server/**/*.py", "../api-server/*.md"
+  ],
+  "directoryPermissions": {
+    "allowedReadPaths": [
+      "D:\\main-project",                            // Local project
+      "D:\\api-server", "D:\\api-server\\src"       // External project
+    ]
+  },
+  "priorityFiles": [
+    ".claude/settings.local.json",
+    "requirements.txt", 
+    "../api-server/README.md",                      // External priority files
+    "../api-server/docker-compose.yml"
+  ],
+  "workspace": {
+    "projects": [
+      { "name": "Main Project", "path": ".", "type": "python" },
+      { 
+        "name": "API Server", 
+        "path": "../api-server", 
+        "type": "docker",
+        "absolutePath": "D:\\api-server"
+      }
+    ]
+  }
+}
+```
+
+This ensures Claude has **complete visibility** into your entire workspace structure, with proper access to all related projects regardless of their file system location.
 
 ## Repository Management Per Project
 
@@ -350,6 +397,7 @@ Each repository can be configured with proper visibility settings:
 | **react** | React applications | bash | JSX/TSX files, build tools |
 | **nextjs** | Next.js projects | bash | App/Pages router, optimizations |
 | **python** | Python projects | bash | pip, pytest, virtual environments |
+| **docker** | Docker/containerized projects | bash | docker-compose, multi-language support |
 | **dotnet** | .NET projects | powershell | MSBuild, C# files |
 | **rust** | Rust projects | bash | Cargo, clippy, rustfmt |
 | **go** | Go projects | bash | go mod, testing, formatting |
@@ -378,6 +426,11 @@ The main Claude configuration file with:
       "enabled": true
     }
   },
+  "priorityFiles": [
+    ".claude/settings.local.json",
+    "README.md",
+    "package.json"
+  ],
   "workspaceFiles": [
     "package.json",
     "src/**/*.js",
@@ -395,6 +448,11 @@ The main Claude configuration file with:
   "workspace": {
     "type": "Lerna Monorepo",
     "structure": "workspace",
+    "analysisOrder": [
+      ".claude/settings.local.json",
+      "README.md", 
+      "package.json"
+    ],
     "projects": [
       {"name": "frontend", "path": "frontend", "type": "nextjs", "confidence": 95},
       {"name": "backend", "path": "backend", "type": "nodejs", "confidence": 90},
@@ -442,6 +500,7 @@ During interactive setup, you can configure:
 
 - ✅ **Project name** - Used in MCP server naming
 - ✅ **Workspace files** - Include file patterns in Claude config
+- ✅ **Priority files** - Files Claude should read first for context
 - ✅ **Directory permissions** - Configure read/write access
 - ✅ **MCP server generation** - Create server implementation
 - ✅ **Command selection** - Choose which project commands to include
@@ -599,6 +658,70 @@ You can create custom hooks for any project-specific automation:
    ⚠️  You have uncommitted changes. Consider committing before closing.
    ```
 
+## Priority Files Configuration
+
+Configure files that Claude should read first when analyzing your project. This ensures Claude has important context before examining other files.
+
+### What are Priority Files?
+
+Priority files are documents that provide essential context about your project:
+- **Configuration files** - Settings that affect the entire project
+- **Documentation** - README files with project overviews
+- **Project manifests** - package.json, Cargo.toml, *.csproj files
+- **Architecture docs** - API specifications, design documents
+
+### Automatic Detection
+
+The generator automatically suggests priority files based on your project:
+
+```bash
+? Configure priority files (files Claude should read first for context)? Yes
+? Select files Claude should read first for context:
+  ✓ .claude/settings.local.json
+  ✓ README.md  
+  ✓ package.json
+  ○ -- Add custom file --
+```
+
+### Example Configuration
+
+The generated settings include both `priorityFiles` at the root level and `analysisOrder` in workspace configuration:
+
+```json
+{
+  "priorityFiles": [
+    ".claude/settings.local.json",
+    "README.md",
+    "package.json"
+  ],
+  "workspace": {
+    "type": "Lerna Monorepo",
+    "analysisOrder": [
+      ".claude/settings.local.json", 
+      "README.md",
+      "package.json"
+    ],
+    "projects": [
+      {"name": "frontend", "path": "frontend", "type": "nextjs"}
+    ]
+  }
+}
+```
+
+### Benefits
+
+- 🎯 **Context First** - Claude reads important files before diving into code
+- 🔍 **Better Understanding** - Project structure and configuration inform analysis
+- 📋 **Workspace Awareness** - Multi-project setups get proper context ordering
+- ⚡ **Efficient Analysis** - Reduces back-and-forth during project exploration
+
+### Use Cases
+
+- **New project exploration** - README and config files provide overview
+- **Debugging sessions** - Configuration files help identify environment issues  
+- **Code reviews** - Project structure understanding improves suggestions
+- **Refactoring** - Architecture docs guide large-scale changes
+
 ## Security Features
 
 - 🛡️ **Permission validation** - Warns about dangerous directory access
@@ -708,16 +831,17 @@ claude-gen init --auto-detect
 claude-gen init --auto-detect --directory d:\my_awesome_workspace
 
 # What happens:
-# 1. Detects workspace structure (Lerna, Nx, etc.)
-# 2. Scans and identifies all projects in the workspace
+# 1. Detects workspace structure (Lerna, Nx, VS Code workspace, etc.)
+# 2. Scans and identifies all projects (local + external)
 # 3. Shows project detection results with confidence scores
-# 4. Analyzes files across all projects
+# 4. Analyzes files across all projects and external directories
 # 5. Prompts for workspace file configuration (multi-project aware)
-# 6. Configures repositories per project with visibility settings
-# 7. Sets up hooks for the entire workspace
-# 8. Generates comprehensive .claude/settings.local.json
+# 6. Prompts for priority files (including external project files)
+# 7. Configures repositories per project with visibility settings
+# 8. Sets up hooks for the entire workspace
+# 9. Generates comprehensive .claude/settings.local.json with external project support
 
-# Example output:
+# Example output (Lerna Monorepo):
 🔍 Detecting workspace structure...
 📦 Found Lerna Monorepo  
 🏗️  Structure: workspace
@@ -726,33 +850,51 @@ claude-gen init --auto-detect --directory d:\my_awesome_workspace
   backend (nodejs) - 45 files - 90% confidence
   shared (typescript) - 23 files - 85% confidence
 
+# Example output (VS Code Workspace with External Projects):
+🔍 Detecting workspace structure...
+📦 Found VS Code Workspace
+🏗️  Structure: workspace  
+📁 Projects found: 2
+  . (python) - 46 files - 40% confidence
+  RPM Server (API/Dashboard) (docker) - 40199 files - 30% confidence
+
 🔍 Scanning workspace files...
-📁 Found files: 135 files, 2.8 MB
-  .tsx: 28 files    .ts: 19 files    .js: 12 files
+📁 Found files: 25 files, 266.1 KB
+  .py: 22 files    .md: 2 files    .txt: 1 files
 
 ? How would you like to configure workspace files?
-❯ Use recommended patterns for this project type (12 patterns)
-  Use all scanned files from this directory (135 files)
+❯ Use recommended patterns for this project type (18 patterns)
+  Use all scanned files from this directory (25 files)
 
-📋 Using 12 workspace patterns:
-  frontend/src/**/*.tsx
-  frontend/package.json
-  backend/src/**/*.js
-  backend/package.json
-  shared/**/*.ts
-  *.md
+📋 Using 18 workspace patterns:
+  *.py
+  **/*.py
+  requirements.txt
+  ../RPM-Server/docker-compose.yml        # ← External project files
+  ../RPM-Server/**/*.py
+  ../RPM-Server/**/*.js
+  ../RPM-Server/requirements.txt
+  ../RPM-Server/*.md
+  *.json
+  *.yaml
 
 🔧 Configuring repositories...
 
-📁 Configuring repository for: frontend (nextjs)
-? Configure repository settings for frontend? Yes
-  ✅ Added github: https://github.com/company/frontend.git
-     🔒 Private repository
+? Configure priority files (files Claude should read first for context)? Yes
+? Select files Claude should read first for context:
+  ✓ .claude/settings.local.json
+  ✓ requirements.txt
+  ✓ ../RPM-Server/README.md              # ← External project priority files
+  ✓ ../RPM-Server/docker-compose.yml
+  ✓ ../RPM-Server/requirements.txt
 
-📁 Configuring repository for: backend (nodejs)
-? Configure repository settings for backend? Yes  
-  ✅ Added work: https://gitlab.company.com/api/backend.git
-     🏢 Internal repository
+📁 Configuring repository for: . (python)
+? Configure repository settings for .? No
+
+📁 Configuring repository for: RPM Server (API/Dashboard) (docker)
+  Existing remotes found:
+    origin: http://192.168.1.219:3300/mediprojects/rpm-server.git
+? Configure repository settings for RPM Server (API/Dashboard)? Yes
 
 ✅ Claude settings written to: .claude/settings.local.json
 ✅ MCP server written to: mcp-server.js

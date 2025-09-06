@@ -36,7 +36,8 @@ class ClaudeSettingsGenerator {
       mcpServerConfig = {},
       hooksConfig = {},
       workspaceDetection = null,
-      repositoryConfig = null
+      repositoryConfig = null,
+      priorityFiles = null
     } = options;
 
     // Start with default settings
@@ -75,7 +76,15 @@ class ClaudeSettingsGenerator {
       if (workspaceDetection && (workspaceDetection.isWorkspace || workspaceDetection.projects.length > 1)) {
         // Multi-project workspace permissions
         workspaceDetection.projects.forEach(project => {
-          const projectPath = project.path === '.' ? targetDir : path.resolve(targetDir, project.path);
+          // Handle external projects with absolute paths
+          let projectPath;
+          if (project.absolutePath) {
+            projectPath = project.absolutePath;
+          } else if (project.path === '.') {
+            projectPath = targetDir;
+          } else {
+            projectPath = path.resolve(targetDir, project.path);
+          }
           
           // Add project-specific paths
           if (projectConfig.permissions) {
@@ -117,18 +126,43 @@ class ClaudeSettingsGenerator {
       settings.hooks = hooksConfig;
     }
 
+    // Add priority files configuration
+    if (priorityFiles && priorityFiles.length > 0) {
+      settings.priorityFiles = priorityFiles;
+    }
+
     // Add workspace and repository information
     if (workspaceDetection) {
       settings.workspace = {
         type: workspaceDetection.workspaceType,
         structure: workspaceDetection.structure,
-        projects: workspaceDetection.projects.map(p => ({
-          name: p.name,
-          path: p.path,
-          type: p.type,
-          confidence: Math.round(p.confidence)
-        }))
+        projects: workspaceDetection.projects.map(p => {
+          // Handle external projects with consistent path resolution
+          let projectPath = p.path;
+          const projectData = {
+            name: p.name,
+            path: projectPath,
+            type: p.type,
+            confidence: Math.round(p.confidence)
+          };
+          
+          // For external projects, use relative path and include absolutePath
+          if (p.isExternal && p.absolutePath) {
+            projectPath = path.relative(targetDir, p.absolutePath);
+            // Normalize path separators for cross-platform compatibility
+            projectPath = projectPath.replace(/\\/g, '/');
+            projectData.path = projectPath;
+            projectData.absolutePath = p.absolutePath;
+          }
+          
+          return projectData;
+        })
       };
+
+      // Add analysisOrder to workspace if priorityFiles are configured
+      if (priorityFiles && priorityFiles.length > 0) {
+        settings.workspace.analysisOrder = priorityFiles;
+      }
     }
 
     // Add repository configuration

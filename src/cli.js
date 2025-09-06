@@ -202,6 +202,7 @@ async function initCommand(options) {
 
   // Skip interactive prompts in dry-run mode
   let answers, shouldConfigureHooks, hooksAnswers;
+  let priorityFilesAnswers = { priorityFiles: [] }; // Initialize with default
   if (options.dryRun) {
     // Use defaults for dry-run mode
     answers = {
@@ -213,6 +214,7 @@ async function initCommand(options) {
     };
     shouldConfigureHooks = { configureHooks: false };
     hooksAnswers = { selectedHooks: [], customHooks: [] };
+    priorityFilesAnswers = { priorityFiles: ['.claude/settings.local.json', 'README.md'] };
   } else {
     // Interactive configuration
     answers = await inquirer.prompt([
@@ -336,6 +338,93 @@ async function initCommand(options) {
         hooksAnswers.customHooks = [customHook];
       }
     }
+
+    // Ask about priority files configuration
+    const priorityFilesAnswer = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'configurePriorityFiles',
+      message: 'Configure priority files (files Claude should read first for context)?',
+      default: true
+    }]);
+
+    if (priorityFilesAnswer.configurePriorityFiles) {
+      // Suggest common priority files based on project type and workspace detection
+      const defaultPriorityFiles = ['.claude/settings.local.json'];
+      
+      // Add README files
+      if (workspaceAnalysis.files.some(f => f.name && f.name.toLowerCase().startsWith('readme'))) {
+        defaultPriorityFiles.push('README.md');
+      }
+      
+      // Add project-specific important files
+      if (config.workspaceFiles.includes('package.json')) {
+        defaultPriorityFiles.push('package.json');
+      }
+      if (config.workspaceFiles.includes('Cargo.toml')) {
+        defaultPriorityFiles.push('Cargo.toml');
+      }
+      if (config.workspaceFiles.includes('requirements.txt')) {
+        defaultPriorityFiles.push('requirements.txt');
+      }
+      if (config.workspaceFiles.includes('*.csproj')) {
+        const csprojFiles = workspaceAnalysis.files.filter(f => f.name && f.name.endsWith('.csproj'));
+        if (csprojFiles.length > 0) {
+          defaultPriorityFiles.push(csprojFiles[0].relativePath);
+        }
+      }
+
+      // Add priority files from external projects
+      if (workspaceDetection && workspaceDetection.externalProjects) {
+        workspaceDetection.externalProjects.forEach(project => {
+          const projectConfig = projectTypes[project.type] || config;
+          // Get relative path to external project
+          const projectPath = path.relative(targetDir, project.absolutePath).replace(/\\/g, '/');
+          
+          // Add common priority files from external projects
+          if (projectConfig.workspaceFiles.includes('README.md')) {
+            defaultPriorityFiles.push(`${projectPath}/README.md`);
+          }
+          if (projectConfig.workspaceFiles.includes('package.json')) {
+            defaultPriorityFiles.push(`${projectPath}/package.json`);
+          }
+          if (projectConfig.workspaceFiles.includes('requirements.txt')) {
+            defaultPriorityFiles.push(`${projectPath}/requirements.txt`);
+          }
+          if (projectConfig.workspaceFiles.includes('docker-compose.yml')) {
+            defaultPriorityFiles.push(`${projectPath}/docker-compose.yml`);
+          }
+          if (projectConfig.workspaceFiles.includes('Cargo.toml')) {
+            defaultPriorityFiles.push(`${projectPath}/Cargo.toml`);
+          }
+        });
+      }
+
+      priorityFilesAnswers = await inquirer.prompt([
+        {
+          type: 'checkbox',
+          name: 'priorityFiles',
+          message: 'Select files Claude should read first for context:',
+          choices: [
+            ...defaultPriorityFiles.map(file => ({ name: file, value: file, checked: true })),
+            { name: '-- Add custom file --', value: 'custom' }
+          ]
+        }
+      ]);
+
+      // Handle custom priority files
+      if (priorityFilesAnswers.priorityFiles.includes('custom')) {
+        const customFile = await inquirer.prompt([{
+          type: 'input',
+          name: 'customFile',
+          message: 'Enter custom file path or pattern:',
+          validate: (input) => input.length > 0 || 'File path is required'
+        }]);
+        
+        // Replace 'custom' with the actual custom file
+        const customIndex = priorityFilesAnswers.priorityFiles.indexOf('custom');
+        priorityFilesAnswers.priorityFiles[customIndex] = customFile.customFile;
+      }
+    }
   }
 
   // Handle workspace files configuration (workspace-aware)
@@ -352,7 +441,15 @@ async function initCommand(options) {
           if (project.path === '.') {
             workspaceFiles.push(pattern);
           } else {
-            workspaceFiles.push(`${project.path}/${pattern}`);
+            // Handle external projects - use relative path from workspace root
+            let projectPath = project.path;
+            if (project.isExternal && project.absolutePath) {
+              // For external projects, use relative path that VS Code workspace references
+              projectPath = path.relative(targetDir, project.absolutePath);
+              // Normalize path separators for cross-platform compatibility  
+              projectPath = projectPath.replace(/\\/g, '/');
+            }
+            workspaceFiles.push(`${projectPath}/${pattern}`);
           }
         });
       });
@@ -509,7 +606,8 @@ async function initCommand(options) {
     }, {}),
     hooksConfig,
     workspaceDetection,
-    repositoryConfig: projectRepositories
+    repositoryConfig: projectRepositories,
+    priorityFiles: priorityFilesAnswers.priorityFiles || []
   };
 
   const settingsData = await settingsGenerator.generateSettings(config, targetDir, settingsOptions);

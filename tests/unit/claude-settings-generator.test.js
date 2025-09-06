@@ -151,6 +151,77 @@ describe('ClaudeSettingsGenerator', () => {
       expect(result).not.toHaveProperty('workspace');
       expect(result).not.toHaveProperty('repositories');
     });
+
+    test('should include priorityFiles configuration', async () => {
+      const projectConfig = {
+        shell: 'bash',
+        mcpServer: { name: 'test-server', command: 'node', args: [] }
+      };
+
+      const priorityFiles = ['.claude/settings.local.json', 'README.md', 'package.json'];
+      const result = await generator.generateSettings(projectConfig, testDir, { priorityFiles });
+
+      expect(result).toHaveProperty('priorityFiles');
+      expect(result.priorityFiles).toEqual(priorityFiles);
+    });
+
+    test('should add analysisOrder to workspace when priorityFiles are configured', async () => {
+      const projectConfig = {
+        shell: 'bash',
+        mcpServer: { name: 'workspace-server', command: 'node', args: [] }
+      };
+
+      const workspaceDetection = {
+        isWorkspace: true,
+        workspaceType: 'Lerna Monorepo',
+        structure: 'workspace',
+        projects: [
+          { name: 'frontend', path: 'frontend', type: 'nextjs', confidence: 95 }
+        ]
+      };
+
+      const priorityFiles = ['.claude/settings.local.json', 'README.md'];
+      const result = await generator.generateSettings(projectConfig, testDir, { 
+        workspaceDetection, 
+        priorityFiles 
+      });
+
+      expect(result).toHaveProperty('workspace');
+      expect(result.workspace).toHaveProperty('analysisOrder');
+      expect(result.workspace.analysisOrder).toEqual(priorityFiles);
+    });
+
+    test('should not include priorityFiles when empty', async () => {
+      const projectConfig = {
+        shell: 'bash',
+        mcpServer: { name: 'test-server', command: 'node', args: [] }
+      };
+
+      const result = await generator.generateSettings(projectConfig, testDir, { priorityFiles: [] });
+
+      expect(result).not.toHaveProperty('priorityFiles');
+    });
+
+    test('should not add analysisOrder to workspace when no priorityFiles', async () => {
+      const projectConfig = {
+        shell: 'bash',
+        mcpServer: { name: 'workspace-server', command: 'node', args: [] }
+      };
+
+      const workspaceDetection = {
+        isWorkspace: true,
+        workspaceType: 'Lerna Monorepo',
+        structure: 'workspace',
+        projects: [
+          { name: 'frontend', path: 'frontend', type: 'nextjs', confidence: 95 }
+        ]
+      };
+
+      const result = await generator.generateSettings(projectConfig, testDir, { workspaceDetection });
+
+      expect(result).toHaveProperty('workspace');
+      expect(result.workspace).not.toHaveProperty('analysisOrder');
+    });
   });
 
   describe('writeSettings', () => {

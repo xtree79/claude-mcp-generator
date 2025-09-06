@@ -156,6 +156,29 @@ const projectTypes = {
       command: 'go',
       args: ['run', 'mcp-server.go']
     }
+  },
+
+  docker: {
+    name: 'Docker Project',
+    shell: 'bash',
+    commands: {
+      build: 'docker-compose build',
+      up: 'docker-compose up',
+      down: 'docker-compose down',
+      logs: 'docker-compose logs',
+      ps: 'docker-compose ps',
+      restart: 'docker-compose restart'
+    },
+    workspaceFiles: ['docker-compose.yml', 'docker-compose.yaml', 'Dockerfile', '**/*.py', '**/*.js', '**/*.ts', 'requirements.txt', 'package.json', '*.md'],
+    permissions: {
+      read: ['./', './src', './app', './api', './web'],
+      write: ['./', './src', './app', './api', './web']
+    },
+    mcpServer: {
+      name: 'docker-mcp-server',
+      command: 'node',
+      args: ['mcp-server.js']
+    }
   }
 };
 
